@@ -1,7 +1,7 @@
-﻿<Application x:Class="project.App"
+﻿<Application x:Class="EscapeFromPrison.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:project"
+             xmlns:local="clr-namespace:EscapeFromPrison"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          
