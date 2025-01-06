@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Collections.Generic;
+using System.Windows.Threading;
 
 namespace EscapeFromPrison
 {
@@ -19,6 +20,7 @@ namespace EscapeFromPrison
         private List<Entity> _entities;
         private Entity _exit;
         private Entity _winTile;
+        private DispatcherTimer _guardMoveTimer;
 
         public GameWindow(int mapSize, string difficulty)
         {
@@ -26,6 +28,7 @@ namespace EscapeFromPrison
             _mapSize = mapSize;
             _difficulty = difficulty;
             InitializeGame();
+            StartGuardMoveTimer();
         }
 
         private void InitializeGame()
@@ -74,7 +77,7 @@ namespace EscapeFromPrison
                     {
                         BorderBrush = Brushes.Black,
                         BorderThickness = new Thickness(1),
-                        Background = Brushes.Gray, 
+                        Background = Brushes.Gray,
                         Width = tileSize,
                         Height = tileSize
                     };
@@ -89,7 +92,7 @@ namespace EscapeFromPrison
                 var ellipse = new Ellipse
                 {
                     Fill = entity.Fill,
-                    Width = 0.8 * (this.ActualWidth / _mapSize), 
+                    Width = 0.8 * (this.ActualWidth / _mapSize),
                     Height = 0.8 * (this.ActualWidth / _mapSize)
                 };
 
@@ -99,28 +102,31 @@ namespace EscapeFromPrison
             }
         }
 
-        private void Window_KeyDown(object sender, KeyEventArgs e)
+        private void MovePlayer(string direction)
         {
-            if (_exit == null || !IsPlayerAlive()) return; 
-            if (e.Key == Key.Up && _playerY > 0) _playerY--;
-            if (e.Key == Key.Down && _playerY < _mapSize - 1) _playerY++;
-            if (e.Key == Key.Left && _playerX > 0) _playerX--;
-            if (e.Key == Key.Right && _playerX < _mapSize - 1) _playerX++;
+            if (_exit == null || !IsPlayerAlive()) return;
+            switch (direction)
+            {
+                case "Up":
+                    if (_playerY > 0) _playerY--;
+                    break;
+                case "Down":
+                    if (_playerY < _mapSize - 1) _playerY++;
+                    break;
+                case "Left":
+                    if (_playerX > 0) _playerX--;
+                    break;
+                case "Right":
+                    if (_playerX < _mapSize - 1) _playerX++;
+                    break;
+            }
 
             UpdateEntities();
-
-            MoveGuards();
 
             if (_playerX == _exit.X && _playerY == _exit.Y)
             {
                 MessageBox.Show("You escaped the prison!");
-                Close(); 
-            }
-
-            if (_playerX == _winTile.X && _playerY == _winTile.Y)
-            {
-                MessageBox.Show("You win! Returning to main menu.");
-                Close(); 
+                Close();
             }
 
             DrawEntities();
@@ -132,16 +138,35 @@ namespace EscapeFromPrison
             player.X = _playerX;
             player.Y = _playerY;
         }
+
         private void MoveGuards()
         {
             foreach (var guard in _entities.Where(e => e.Role == "Guard"))
             {
-                int direction = _random.Next(4); 
+                int direction = _random.Next(4);
 
-                if (direction == 0 && guard.Y > 0) guard.Y--; 
-                if (direction == 1 && guard.Y < _mapSize - 1) guard.Y++; 
-                if (direction == 2 && guard.X > 0) guard.X--; 
-                if (direction == 3 && guard.X < _mapSize - 1) guard.X++; 
+                if (direction == 0 && guard.Y > 0) guard.Y--;
+                else if (direction == 0) guard.Y++;
+                if (direction == 1 && guard.Y < _mapSize - 1) guard.Y++;
+                else if (direction == 1) guard.Y--;
+                if (direction == 2 && guard.X > 0) guard.X--;
+                else if (direction == 2) guard.X++;
+                if (direction == 3 && guard.X < _mapSize - 1) guard.X++;
+                else if (direction == 3) guard.X--;
+            }
+            CheckForCollisions();
+        }
+
+        private void CheckForCollisions()
+        {
+            var player = _entities.FirstOrDefault(e => e.Role == "Player");
+            if (player == null) return;
+
+            var guard = _entities.FirstOrDefault(e => e.Role == "Guard" && e.X == player.X && e.Y == player.Y);
+            if (guard != null)
+            {
+                MessageBox.Show("Game Over! The guard caught you.");
+                Close();
             }
         }
 
@@ -150,6 +175,46 @@ namespace EscapeFromPrison
             var player = _entities.First(e => e.Role == "Player");
             return !_entities.Any(e => e.Role == "Guard" && e.X == player.X && e.Y == player.Y);
         }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (_exit == null || !IsPlayerAlive()) return;
+            switch (e.Key)
+            {
+                case Key.W:
+                    MovePlayer("Up");
+                    break;
+                case Key.S:
+                    MovePlayer("Down");
+                    break;
+                case Key.A:
+                    MovePlayer("Left");
+                    break;
+                case Key.D:
+                    MovePlayer("Right");
+                    break;
+            }
+        }
+
+        private void StartGuardMoveTimer()
+        {
+            _guardMoveTimer = new DispatcherTimer();
+            _guardMoveTimer.Interval = TimeSpan.FromSeconds(1); // Set the interval as needed
+            _guardMoveTimer.Tick += (s, e) => MoveGuards();
+            _guardMoveTimer.Start();
+        }
+
+        private void Restart_Click(object sender, RoutedEventArgs e)
+        {
+            _guardMoveTimer.Stop();
+            InitializeGame();
+            StartGuardMoveTimer();
+        }
+
+        private void Exit_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
     }
 
     public class Entity
@@ -157,6 +222,6 @@ namespace EscapeFromPrison
         public int X { get; set; }
         public int Y { get; set; }
         public Brush Fill { get; set; }
-        public string Role { get; set; } 
+        public string Role { get; set; }
     }
 }

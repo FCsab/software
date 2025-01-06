@@ -22,7 +22,7 @@ namespace EscapeFromPrison
 
         public void InitializeGame(int mapSize, string difficulty)
         {
-            _mapSize = mapSize;
+            _mapSize = Math.Max(mapSize, 7); // Ensure minimum map size of 7x7
             _difficulty = difficulty;
             SetupEntities();
         }
@@ -34,28 +34,27 @@ namespace EscapeFromPrison
             Entities.Add(new GameEntity
             {
                 Fill = Brushes.Blue,
-                X = 0,  
+                X = 0,
                 Y = 0,
                 EntityType = EntityType.Player
             });
 
-
             Entities.Add(new GameEntity
             {
                 Fill = Brushes.Green,
-                X = _mapSize - 1,  
+                X = _mapSize - 1,
                 Y = _mapSize - 1,
                 EntityType = EntityType.Exit
             });
 
-            int numGuards = _difficulty == "Easy" ? 1 : _difficulty == "Normal" ? 2 : 3;
+            int numGuards = Math.Max(_difficulty == "Easy" ? 1 : _difficulty == "Normal" ? 2 : 3, 1); // Ensure at least one guard
             for (int i = 0; i < numGuards; i++)
             {
                 Entities.Add(new GameEntity
                 {
                     Fill = Brushes.Red,
-                    X = _mapSize - 1,  
-                    Y = _mapSize - 1,
+                    X = _random.Next(1, _mapSize - 1),
+                    Y = _random.Next(1, _mapSize - 1),
                     EntityType = EntityType.Guard
                 });
             }
@@ -92,7 +91,6 @@ namespace EscapeFromPrison
             var exit = Entities.FirstOrDefault(e => e.EntityType == EntityType.Exit);
             if (player.X == exit?.X && player.Y == exit?.Y)
             {
-
                 Console.WriteLine("You reached the exit! You Win!");
             }
             var guard = Entities.FirstOrDefault(e => e.EntityType == EntityType.Guard && e.X == player.X && e.Y == player.Y);
@@ -104,24 +102,27 @@ namespace EscapeFromPrison
 
         public void MoveGuards()
         {
-            Random random = new Random();
             foreach (var guard in Entities.Where(e => e.EntityType == EntityType.Guard))
             {
-                int direction = random.Next(0, 4); 
+                int direction = _random.Next(0, 4);
 
                 switch (direction)
                 {
                     case 0: // Up
                         if (guard.Y > 0) guard.Y--;
+                        else guard.Y++;
                         break;
                     case 1: // Down
                         if (guard.Y < _mapSize - 1) guard.Y++;
+                        else guard.Y--;
                         break;
                     case 2: // Left
                         if (guard.X > 0) guard.X--;
+                        else guard.X++;
                         break;
                     case 3: // Right
                         if (guard.X < _mapSize - 1) guard.X++;
+                        else guard.X--;
                         break;
                 }
             }

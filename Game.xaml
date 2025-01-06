@@ -4,6 +4,19 @@
         Title="Escape from Prison" Height="600" Width="800" WindowStartupLocation="CenterScreen"
         Background="Black" KeyDown="Window_KeyDown">
 
-    <Grid Name="GameGrid" Background="Black">
+    <Grid Background="Black">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Menu VerticalAlignment="Top" Background="Gray">
+            <MenuItem Header="File">
+                <MenuItem Header="Restart" Click="Restart_Click"/>
+                <MenuItem Header="Exit" Click="Exit_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <Grid Name="GameGrid" Grid.Row="1" Background="Black"/>
     </Grid>
 </Window>
